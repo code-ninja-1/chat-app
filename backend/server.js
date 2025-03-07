@@ -76,7 +76,7 @@ wss.on("connection", (ws, req) => {
     // Broadcast user joined
     broadcast({ type: MsgType.NOTIFICATION, text: `${username} joined the chat`, username: username });
     broadcastUserList();
-    broadcast({ type: MsgType.CHAT_HISTORY, chatType: ChatType.GLOBAL, messages: chatHistory.global });
+    ws.send(JSON.stringify({ type: MsgType.CHAT_HISTORY, chatType: ChatType.GLOBAL, messages: chatHistory.global }));
 
     ws.on("message", (data) => {
         const msg = JSON.parse(data);
@@ -103,7 +103,9 @@ wss.on("connection", (ws, req) => {
                 return;
             }
             const chatKey = getChatKey(msg.username, msg.recipient);
-            broadcast({ type: MsgType.CHAT_HISTORY, chatType: ChatType.PRIVATE, recipient: msg.recipient, messages: chatHistory.private[chatKey] || [] });
+            if (clients.has(msg.username)) {
+                clients.get(msg.username).send(JSON.stringify({ type: MsgType.CHAT_HISTORY, chatType: ChatType.PRIVATE, recipient: msg.recipient, messages: chatHistory.private[chatKey] || [] }));
+            }
         }
     });
 
